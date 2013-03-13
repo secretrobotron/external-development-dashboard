@@ -46,6 +46,21 @@ header h1 {
   background: rgba(0, 0, 0, 0.3);
 }
 
+.side-panel .title.num-users {
+  color: #C13832;
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0;
+}
+
+.side-panel .title.support {
+  margin-top: 0;
+}
+
+.side-panel .title.partners {
+  margin-top: 3em;
+}
+
 .main-panel .container {
   position: absolute;
   top: 1em;
@@ -115,42 +130,45 @@ header h1 {
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: 30%;
+  height: 20%;
 }
 
 .glorious-dead-logo {
   width: 100%;
+  height: 100%;
   text-align: center;
   position: absolute;
 }
 
-.glorious-dead-logo img {
+.glorious-dead-logo div {
   transition: opacity 1s;
   -webkit-transition: opacity 1s;
   -moz-transition: opacity 1s;
   -o-transition: opacity 1s;
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: 50% 0;
 }
 
-.glorious-dead-logo img:nth-child(1) {
-  width: 90%;
-  top: 15%;
-  left: 5%;
-  position: absolute;
+.glorious-dead-logo div:nth-child(1) {
+  background-image: url('images/mozilla.png');
 }
 
-.glorious-dead-logo img:nth-child(2) {
+.glorious-dead-logo div:nth-child(2) {
+  background-image: url('images/tgd.svg');
   position: absolute;
-  width: 80%;
   top: 0;
-  left: 10%;
+  left: 0;
   opacity: 0;
 }
 
-.glorious-dead-logo:hover img:nth-child(1) {
+.glorious-dead-logo:hover div:nth-child(1) {
   opacity: 0;
 }
 
-.glorious-dead-logo:hover img:nth-child(2) {
+.glorious-dead-logo:hover div:nth-child(2) {
   opacity: 1;
 }
 
