@@ -116,11 +116,6 @@ function renderChart(data){
 
   var ctx = dataCanvas.getContext('2d');
 
-  function alignLabel(x, index){
-    var label = xAxisLabels[index];
-    label.style.left = x - label.offsetWidth / 2 + 'px';
-  }
-
   function getPositionVector(index) {
     return [
       startX + chartContentRect.width / xAxisLabels.length * index,
@@ -133,28 +128,64 @@ function renderChart(data){
     dataPoint.style.top = chartContentRect.height - p[1] + 'px';
   }
 
-  function plotProjections(actualsPoints){
-    var p, i, points = [];
-    for (i = currentMonth + 1; i < 12; ++i) {
-      p = getPositionVector(i);
-      positionDataPoint(dataPoints[i], p);
-      alignLabel(p[0], i);
-      points.push(p);
+  function calculatePoints(){
+    var points = [];
+    for (var i = 0; i <= 12; ++i) {
+      points.push(getPositionVector(i));
     }
-    drawProjections(points, actualsPoints);
+    return points;
   }
 
-  function plotActuals(){
-    var i, p, points = [];
-    for (i = 0; i <= currentMonth; ++i) {
-      p = getPositionVector(i);
-      positionDataPoint(dataPoints[i], p);
-      dataPoints[i].classList.add('actual');
-      alignLabel(p[0], i);
-      points.push(p);
+  function stampOutRadialDataPointBackground(point) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(point[0], dataCanvas.height - point[1], GRAPH_POINT_RADIUS, 0, Math.PI * 2, true);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function alignMonthLabel(index, x){
+    var label = xAxisLabels[index];
+    label.style.left = x - label.offsetWidth / 2 + 'px';
+  }
+
+  function plotEvents(points){
+    var currentEvents;
+    var eventsBox = document.querySelector('.events');
+
+    removeAllChildren(eventsBox);
+
+    for (var i = 0; i < 12; ++i) {
+      alignMonthLabel(i, points[i][0]);
+      if (i === currentMonth) {
+        dataPoints[i].classList.add('on');
+        dataPoints[i].classList.add('big');
+      }
+      if (monthsWithEvents[i]) {
+        dataPoints[i].classList.add('on');
+        stampOutRadialDataPointBackground(points[i]);
+        positionDataPoint(dataPoints[i], points[i]);
+        if (i <= currentMonth) {
+          currentEvents = currentEvents || monthsWithEvents[i];
+        }
+      }
     }
-    drawActuals(points);
-    return points;
+
+    if (currentEvents) {
+      currentEvents.forEach(function(event){
+        var li = document.createElement('li');
+        var h = document.createElement('h4');
+        var p = document.createElement('p');
+        li.classList.add('event');
+        p.classList.add('description');
+        h.classList.add('title');
+        p.appendChild(document.createTextNode(event.description));
+        h.appendChild(document.createTextNode(event.name));
+        li.appendChild(h);
+        li.appendChild(p);
+        eventsBox.appendChild(li);
+      });
+    }
   }
 
   function drawActuals(points){
@@ -167,12 +198,12 @@ function renderChart(data){
     ctx.moveTo(pair[0], dataCanvas.height - pair[1]);
     ctx.beginPath();
 
-    for (i = 1; i < points.length; ++i) {
+    for (i = 1; i <= currentMonth; ++i) {
       pair = points[i];
       ctx.lineTo(pair[0], dataCanvas.height - pair[1]);
     }
 
-    pair = points[i - 1];
+    pair = points[currentMonth];
 
     ctx.lineTo(pair[0], dataCanvas.height);
     ctx.lineTo(startX, dataCanvas.height);
@@ -183,11 +214,12 @@ function renderChart(data){
     ctx.fillStyle = 'rgba(1, 0, 0, 1.0)';
     ctx.strokeStyle = GRAPH_LINE_STYLE;
     ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
 
-    drawLineWithRadialNodes(points, GRAPH_POINT_RADIUS);
+    drawLine(points, 0, currentMonth);
   }
 
-  function drawProjections(points, actualsPoints){
+  function drawProjections(points, startPoint){
     ctx.lineWidth = 1;
     ctx.lineCap = 'round';
 
@@ -199,55 +231,16 @@ function renderChart(data){
     }
 
     ctx.strokeStyle = '#222';
-    drawLineWithRadialNodes(points, GRAPH_POINT_RADIUS, actualsPoints[actualsPoints.length - 1]);
+    drawLine(points, currentMonth, 12);
   }
 
-  function drawLineWithRadialNodes(points, radius, startPoint) {
-    var p, thisPair, nextPair;
-    
-    thisPair = points[0];
-    nextPair = points[1];
-
-    if (startPoint) {
-      points = points.slice();
-      points.unshift(startPoint);
+  function drawLine(points, startIndex, stopIndex) {
+    ctx.beginPath();
+    ctx.moveTo(points[startIndex][0], dataCanvas.height - points[startIndex][1]);
+    for(var i = startIndex; i <= stopIndex; ++i){
+      ctx.lineTo(points[i][0], dataCanvas.height - points[i][1]);
     }
-
-    for(var i = 0; i < points.length - 1; ++i){
-      thisPair = points[i];
-      nextPair = points[i+1];
-      
-      p = adjustPointForRadius(thisPair[0], thisPair[1], nextPair[0], nextPair[1], radius);
-
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.beginPath();
-      ctx.arc(thisPair[0], dataCanvas.height - thisPair[1], radius, 0, Math.PI * 2, true);
-      ctx.arc(nextPair[0], dataCanvas.height - nextPair[1], radius, 0, Math.PI * 2, true);
-      ctx.fill();
-
-      ctx.globalCompositeOperation = 'source-over';
-
-      ctx.beginPath();
-      ctx.moveTo(p[0][0], dataCanvas.height - p[0][1]);
-      ctx.lineTo(p[1][0], dataCanvas.height - p[1][1]);
-      ctx.stroke();
-    }
-  }
-
-  plotProjections(plotActuals());
-
-  function adjustPointForRadius(x, y, nx, ny, r){
-    var dy = ny - y;
-    var dx = nx - x;
-
-    var d = Math.sqrt(dx*dx + dy*dy);
-    var s = dy / d;
-    var c = dx / d;
-
-    return [
-      [x + c * r, y + s * r],
-      [nx - c * r, ny - s * r]
-    ];
+    ctx.stroke();
   }
 
   var yMarkers = document.querySelectorAll('.y-axis > .y-marker');
@@ -259,41 +252,29 @@ function renderChart(data){
   });
 
   var eventsContainer = document.querySelector('.events');
-  var eventMarker = eventsContainer.querySelector('.event');
+  //var eventMarker = eventsContainer.querySelector('.event');
   var eventsData = data.donations.events;
 
   var monthsWithEvents = [];
 
   Object.keys(eventsData).forEach(function(eventName){
     var eventData = eventsData[eventName];
-    eventData.forEach(function(month, index){
-      if (eventData[index + 1] !== month + 1) {
+    eventData.dates.forEach(function(month, index){
+      if (eventData.dates[index + 1] !== month + 1) {
         monthsWithEvents[month] = monthsWithEvents[month] || [];
-        monthsWithEvents[month].push(eventName);
+        monthsWithEvents[month].push({name: eventName, description: eventData.description});
       }
-    });
-  });
-
-  removeAllChildren(eventsContainer);
-
-  monthsWithEvents.forEach(function(events, index){
-    var newEventMarker = eventMarker.cloneNode(true);
-    eventsContainer.appendChild(newEventMarker);
-    newEventMarker.style.left = startX + chartContentRect.width / MONTHS.length * index - eventMarker.offsetWidth / 2 + 'px';
-    var titleContainer = newEventMarker.querySelector('.title');
-    
-    removeAllChildren(titleContainer);
-
-    events.forEach(function(event){
-      var li = document.createElement('li');
-      li.appendChild(document.createTextNode(event));
-      titleContainer.appendChild(li);
     });
   });
 
   var targetContainer = document.querySelector('.target');
   targetContainer.style.top = chartContentRect.height - chartContentRect.height * TARGET / MAX_Y - targetContainer.offsetHeight / 2 + 'px';
   removeAllChildren(targetContainer.querySelector('.value')).appendChild(document.createTextNode(formatCurrencyNumber(TARGET, 0, '.', ',')));
+
+  var points = calculatePoints();
+  drawProjections(points);
+  drawActuals(points);
+  plotEvents(points);
 }
 
 function setup(data){
@@ -305,15 +286,14 @@ function setup(data){
 
 document.addEventListener('DOMContentLoaded', function(e){
   if(window.location.search.indexOf('test') > -1){
-    setup({"donations":{"projections":[35000,11000,111000,51000,11000,21000,21000,26000,291000,71000,21000,611000],"actuals":[33295.71,0,0,0,0,0,0,0,0,0,0,0],"events":{"Humble Bundle ":[2,8],"Manifesto v1.0":[3],"Summer Code Party":[5,6,7,8],"Mozfest Contest":[8,9],"Mozfest Tickets":[7,8,9]}},"grantsAndGifts":{"initiated":[{"value":9930,"date":1325404800000},{"value":83708,"date":1325404800000},{"value":115000,"date":1293868800000},{"value":1000000,"date":1325404800000},{"value":100000,"date":1325404800000},{"value":625387,"date":1293868800000},{"value":79705,"date":1325404800000},{"value":173000,"date":1325404800000},{"value":295000,"date":1362124800000},{"value":287500,"date":1325404800000},{"value":288800,"date":1325404800000}],"uninitiated":[{"value":15200,"date":1370070000000},{"value":95000,"date":1364799600000},{"value":12000,"date":1380610800000},{"value":22500,"date":1378018800000},{"value":90000,"date":1367391600000},{"value":100000,"date":1370070000000},{"value":12000,"date":1364799600000},{"value":9000,"date":1380610800000},{"value":20000,"date":1367391600000},{"value":180000,"date":1362124800000},{"value":249880,"date":1370070000000},{"value":1200000,"date":1370070000000},{"value":50000,"date":1370070000000},{"value":20000,"date":1370070000000},{"value":10000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":10000,"date":1375340400000},{"value":100000,"date":1372662000000},{"value":175000,"date":1372662000000},{"value":37500,"date":1383289200000},{"value":93611,"date":1346482800000},{"value":150000,"date":1367391600000},{"value":16000,"date":1378018800000},{"value":8000,"date":1370070000000},{"value":30000,"date":1372662000000},{"value":60000,"date":1367391600000},{"value":6000,"date":1380610800000},{"value":49999.99999999999,"date":1378018800000},{"value":4000,"date":1367391600000},{"value":0,"date":""}]}});
+    setup({"donations":{"projections":[35000,11000,111000,51000,11000,21000,21000,26000,291000,71000,21000,611000],"actuals":[33295.71,0,0,0,0,0,0,0,0,0,0,0],"events":{"Humble Bundle ":{"dates":[2,8],"description":"description"},"Manifesto v1.0":{"dates":[3],"description":"description"},"Summer Code Party":{"dates":[5,6,7,8],"description":"description"},"Mozfest Contest":{"dates":[8,9],"description":"description"},"Mozfest Tickets":{"dates":[7,8,9],"description":"description"}}},"grantsAndGifts":{"initiated":[{"value":9930,"date":1325404800000},{"value":83708,"date":1325404800000},{"value":115000,"date":1293868800000},{"value":1000000,"date":1325404800000},{"value":100000,"date":1325404800000},{"value":625387,"date":1293868800000},{"value":79705,"date":1325404800000},{"value":173000,"date":1325404800000},{"value":287500,"date":1325404800000},{"value":288800,"date":1325404800000}],"uninitiated":[{"value":15200,"date":1370070000000},{"value":95000,"date":1364799600000},{"value":12000,"date":1380610800000},{"value":22500,"date":1378018800000},{"value":90000,"date":1367391600000},{"value":100000,"date":1370070000000},{"value":12000,"date":1364799600000},{"value":9000,"date":1380610800000},{"value":20000,"date":1367391600000},{"value":180000,"date":1362124800000},{"value":249880,"date":1370070000000},{"value":1200000,"date":1370070000000},{"value":50000,"date":1370070000000},{"value":180000,"date":1378018800000},{"value":20000,"date":1370070000000},{"value":10000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":10000,"date":1375340400000},{"value":100000,"date":1372662000000},{"value":175000,"date":1372662000000},{"value":17190,"date":1378018800000},{"value":37500,"date":1383289200000},{"value":93611,"date":1346482800000},{"value":150000,"date":1367391600000},{"value":16000,"date":1378018800000},{"value":8000,"date":1370070000000},{"value":15000,"date":1372662000000},{"value":60000,"date":1367391600000},{"value":6000,"date":1380610800000},{"value":49999.99999999999,"date":1378018800000},{"value":4000,"date":1367391600000},{"value":0,"date":""}]}});
   }
   else{
     getJSONP(GAUNTLET_DATA_URL, function(json){
-      //console.log(JSON.stringify(json));
+      // console.log(JSON.stringify(json));
       setup(json);
     });
   }
-
 }, false);
 
 })();
