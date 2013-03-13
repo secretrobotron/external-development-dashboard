@@ -1,0 +1,329 @@
+html {
+  background: #D6D3C6;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  color: #222;
+  font-family: helvetica;
+  font-family: 'Droid Sans', sans-serif, helvetica;
+  font-size: 20pt;
+}
+
+.main-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 80%;
+  height: 100%;
+
+  box-shadow: 2px 0 5px #000;
+}
+
+header {
+  margin-left: 1em;
+  margin-top: .5em;
+}
+
+header h1 {
+  margin: 0;
+  display: inline;
+}
+
+header img {
+  height: 1.5em;
+  display: inline;
+  margin-right: 1em;
+}
+
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 20%;
+  height: 100%;
+
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.main-panel .container {
+  position: absolute;
+  top: 1em;
+  right: 4em;
+  bottom: 4em;
+  left: 4em;
+}
+
+.main-panel .chart {
+  position: absolute;
+  top: 20%;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.side-panel .container {
+  position: absolute;
+  top: 5%;
+  right: 5%;
+  bottom: 5%;
+  left: 5%;
+}
+
+.events {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.events .event {
+  background-image: url('images/event-marker-bottom.svg');
+  background-position: 0 100%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: -10px;
+  bottom: -4.65em;
+  width: 50px;
+}
+
+.events .event .title {
+  list-style: none;
+  font-size: .35em;
+  white-space: nowrap;
+  width: 100%;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  bottom: 25px;
+}
+
+.events .event .title li {
+  margin-left: -50%;
+  position: relative;
+  left: 25%;
+  top: 0.3em;
+  padding-bottom: 2px;
+}
+
+.glorious-dead-logo {
+  background-image: url('images/tgd.svg');
+  background-size: contain;
+  background-position: 50% 0%;
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 20%;
+}
+
+.chart-content {
+  position: absolute;
+  top: 0;
+  left: 5%;
+  bottom: 5%;
+  right: 0;
+}
+
+.y-axis {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.y-marker {
+  position: absolute;
+  width: 100%;
+}
+
+.y-marker .dollar-value {
+  font-size: 0.5em;
+  position: absolute;
+  left: -6em;
+  top: -.5em;
+  width: 5em;
+  text-align: right;
+  opacity: .5;
+}
+
+.y-marker .y-line {
+  width: 100%;
+  border-top: 1px dashed rgba(255, 255, 255, 0.5);
+  height: 1px;
+  position: absolute;
+  right: 5px;
+}
+
+.chart-content .x-axis {
+  position: absolute;
+  border-radius: 3px;
+  background: #fff;
+  height: 6px;
+  width: 100%;
+  bottom: -7px;
+}
+
+.x-axis .labels {
+  list-style: none;
+  position: relative;
+  margin-top: .5em;
+  margin-bottom: .5em;
+}
+
+.x-axis .labels li {
+  position: absolute;
+  display: inline-block;
+  font-size: .7em;
+}
+
+.x-axis .labels li:nth-child(odd){
+  visibility: hidden;
+}
+
+.data-points {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.data-point {
+  position: absolute;
+  border: 5px solid rgba(239, 73, 34, 1.0);
+  width: 0;
+  height: 0;
+  border-radius: 7px;
+  z-index: 2;
+  margin-top: -5px;
+  margin-left: -5px;
+}
+
+.data-point.actual {
+  border-width: 7px;
+  border-color: rgba(34, 147, 209, 1.0);
+  margin-top: -14px;
+  margin-left: -14px;
+  width: 13px;
+  height: 13px;
+  border-radius: 14px;
+}
+
+.data-canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.glorious-dead-logo p {
+  font-size: .5em;
+  text-align: center;
+  top: -2em;
+  position: absolute;
+  width: 100%;
+  text-shadow: 1px 1px 2px #000;  
+}
+
+.side-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 1em;
+}
+
+.side-panel ul li {
+  font-size: .7em;
+  text-align: center;
+}
+
+.side-panel .title {
+  font-size: .5em;
+  text-align: center;
+  width: 100%;
+  text-shadow: 1px 1px 2px #000;
+}
+
+.target {
+  height: 30px;
+  width: 100%;
+  position: absolute;
+  z-index: 2;
+}
+
+.target .label {
+  font-size: .5em;
+  position: absolute;
+  height: 100%;
+  width: 10.48em;
+  left: -10.5em;
+  line-height: 30px;
+  background: rgba(239, 73, 34, 0.8);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.target .label .title {
+  padding-left: .5em;
+  width: 33%;
+  position: relative;
+  color: #fff;
+}
+
+.target .label .title > span {
+  position: relative;
+  z-index: 2;
+}
+
+.target .label .pointer {
+  position: absolute;
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.5);
+  width: 100px;
+  right: 0;
+  height: 100px;
+  -o-transform: rotate(30deg) skewY(30deg);
+  -ms-transform: rotate(30deg) skewY(30deg);
+  -moz-transform: rotate(30deg) skewY(30deg);
+  -webkit-transform: rotate(30deg) skewY(30deg);
+  transform: rotate(30deg) skewY(30deg);
+  top: -41px;
+}
+
+.target .line {
+  width: 100%;
+  height: 5px;
+  background: rgba(239, 73, 34, 0.8);
+  position: absolute;
+  top: 50%;
+  margin-top: -2.5px;  
+}
+
+.target .line .arrow {
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 15px solid rgba(239, 73, 34, 0.8);
+  position: absolute;
+  right: -15px;
+  top: -7px;  
+}
+
+.target .value {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: #fff;
+  margin-right: .3em;
+  font-weight: bold;
+  font-size: 1.1em;
+}
