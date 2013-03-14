@@ -255,9 +255,16 @@ header h1 {
   margin-left: -11px;
   width: 11px;
   height: 11px;
-  border-radius: 17px;
+  border-radius: 14px;
   visibility: hidden;
   cursor: pointer;
+}
+
+.data-point.small {
+  margin-top: -9px;
+  margin-left: -9px;
+  width: 9px;
+  height: 9px;
 }
 
 .data-point:hover {

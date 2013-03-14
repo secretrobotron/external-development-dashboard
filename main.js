@@ -8,6 +8,7 @@ var GAUNTLET_DATA_URL = 'https://script.google.com/macros/s/AKfycbw8CX3mKuOpfEYN
 var GRAPH_FILL_STYLE = 'rgba(34, 147, 209, 0.5)';
 var GRAPH_LINE_STYLE = 'rgba(34, 147, 209, 1.0)';
 var GRAPH_POINT_RADIUS = 10;
+var GRAPH_POINT_RADIUS_SMALL = 7;
 var ACTUAL_LINE_WIDTH = 7;
 var PROJECTION_LINE_WIDTH = 2;
 
@@ -96,7 +97,6 @@ function renderChart(data){
   var chartContent = chartContainer.querySelector('.chart-content');
   var xAxis = chartContainer.querySelector('.x-axis');
   var xAxisLabels = xAxis.querySelectorAll('li');
-  var dataPoints = chartContainer.querySelectorAll('.data-points > .data-point');
   var dataCanvas = chartContainer.querySelector('.data-canvas');
 
   var chartContentRect = chartContent.getBoundingClientRect();
@@ -125,11 +125,6 @@ function renderChart(data){
     ];
   }
 
-  function positionDataPoint(dataPoint, p){
-    dataPoint.style.left = p[0] + 'px';
-    dataPoint.style.top = chartContentRect.height - p[1] + 'px';
-  }
-
   function calculatePoints(){
     var points = [];
     for (var i = 0; i <= 12; ++i) {
@@ -138,10 +133,11 @@ function renderChart(data){
     return points;
   }
 
-  function stampOutRadialDataPointBackground(point) {
+  function stampOutRadialDataPointBackground(point, radius, offset) {
+    offset = offset || 0;
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(point[0], dataCanvas.height - point[1], GRAPH_POINT_RADIUS, 0, Math.PI * 2, true);
+    ctx.arc(point[0], dataCanvas.height - point[1] + offset, GRAPH_POINT_RADIUS, 0, Math.PI * 2, true);
     ctx.fill();
     ctx.globalCompositeOperation = 'source-over';
   }
@@ -151,41 +147,84 @@ function renderChart(data){
     label.style.left = x - label.offsetWidth / 2 + 'px';
   }
 
-  function plotEvents(points){
-    var currentEvents;
+  function plotEvents (points) {
+    var nextEvent;
     var eventsBox = document.querySelector('.events');
+    var dataPointContainer = document.querySelector('.data-points');
 
+    function createEventBoxContent (eventData) {
+      var li = document.createElement('li');
+      var h = document.createElement('h4');
+      var p = document.createElement('p');
+      li.classList.add('event');
+      p.classList.add('description');
+      h.classList.add('title');
+      p.appendChild(document.createTextNode(eventData.description));
+      h.appendChild(document.createTextNode(eventData.name));
+      li.appendChild(h);
+      li.appendChild(p);
+      return li;
+    }
+
+    removeAllChildren(dataPointContainer);
     removeAllChildren(eventsBox);
 
     for (var i = 0; i < 12; ++i) {
       alignMonthLabel(i, points[i][0]);
-      if (monthsWithEvents[i]) {
-        if (i !== currentMonth) {
-          dataPoints[i].classList.add('on');
-          stampOutRadialDataPointBackground(points[i]);
-          positionDataPoint(dataPoints[i], points[i]);
-        }
-        if (i <= currentMonth) {
-          currentEvents = currentEvents || monthsWithEvents[i];
+      if (i >= currentMonth) {
+        if (monthsWithEvents[i]) {
+          monthsWithEvents[i].forEach(function(eventData, eventIndex){
+            var eventBoxContent = createEventBoxContent(eventData);
+            eventsBox.appendChild(eventBoxContent);
+
+            var offset = 0;
+            var radius = GRAPH_POINT_RADIUS;
+
+            var dataPoint = document.createElement('div');
+            dataPoint.classList.add('data-point');
+            dataPoint.classList.add('on');
+            dataPointContainer.appendChild(dataPoint);
+
+            if (i === currentMonth) {
+              offset = GRAPH_POINT_RADIUS * 2.5;
+              radius = GRAPH_POINT_RADIUS_SMALL * 2.5;
+              dataPoint.classList.add('small');
+            }
+
+            stampOutRadialDataPointBackground(points[i], radius, offset);
+            dataPoint.style.left = points[i][0] + 'px';
+            dataPoint.style.top = chartContentRect.height
+              - points[i][1]
+              + eventIndex * radius * 1.8
+              - (monthsWithEvents[i].length - 1) / 2 * radius * 1.8
+              + offset
+              + 'px';
+
+            dataPoint.onmouseover = function(e) {
+              Array.prototype.forEach.call(eventsBox.childNodes, function(child) {
+                child.hidden = true;
+              });
+              eventBoxContent.hidden = false;
+            };
+            dataPoint.onmouseout = function(e) {
+              eventBoxContent.hidden = true;
+              if (nextEvent) {
+                nextEvent.hidden = false;
+              }
+            };
+
+            eventBoxContent.hidden = true;
+
+            nextEvent = nextEvent || eventBoxContent;
+          });
         }
       }
     }
 
-    if (currentEvents) {
-      currentEvents.forEach(function(event){
-        var li = document.createElement('li');
-        var h = document.createElement('h4');
-        var p = document.createElement('p');
-        li.classList.add('event');
-        p.classList.add('description');
-        h.classList.add('title');
-        p.appendChild(document.createTextNode(event.description));
-        h.appendChild(document.createTextNode(event.name));
-        li.appendChild(h);
-        li.appendChild(p);
-        eventsBox.appendChild(li);
-      });
+    if (nextEvent) {
+      nextEvent.hidden = false; 
     }
+
   }
 
   function drawActuals(points){
@@ -270,19 +309,14 @@ function renderChart(data){
     marker.style.top = y + 'px';
   });
 
-  var eventsContainer = document.querySelector('.events');
-  //var eventMarker = eventsContainer.querySelector('.event');
   var eventsData = data.donations.events;
-
   var monthsWithEvents = [];
 
   Object.keys(eventsData).forEach(function(eventName){
     var eventData = eventsData[eventName];
     eventData.dates.forEach(function(month, index){
-      if (eventData.dates[index + 1] !== month + 1) {
-        monthsWithEvents[month] = monthsWithEvents[month] || [];
-        monthsWithEvents[month].push({name: eventName, description: eventData.description});
-      }
+      monthsWithEvents[month] = monthsWithEvents[month] || [];
+      monthsWithEvents[month].push({name: eventName, description: eventData.description});
     });
   });
 
