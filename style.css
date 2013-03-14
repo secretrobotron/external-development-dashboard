@@ -4,6 +4,11 @@ html {
   height: 100%;
 }
 
+@font-face {
+  font-family: 'Open Sans Light';
+  src: url('OpenSans-Light.ttf');
+}
+
 body {
   padding: 0;
   margin: 0;
@@ -13,8 +18,9 @@ body {
   overflow: hidden;
 
   color: #222;
-  font-family: 'Droid Sans', sans-serif, helvetica;
+  font-family: 'Open Sans Light';
   font-size: 20pt;
+  font-weight: normal;
 }
 
 .main-panel {
@@ -394,11 +400,11 @@ header h1 {
 }
 
 .target .label {
-  font-size: .5em;
+  font-size: .4em;
   position: absolute;
   height: 100%;
-  width: 10.48em;
-  left: -10.5em;
+  width: 12.48em;
+  left: -12.5em;
   line-height: 30px;
   background: rgba(239, 73, 34, 0.8);
   border-radius: 3px;
@@ -406,7 +412,7 @@ header h1 {
 }
 
 .target .label .title {
-  padding-left: .5em;
+  padding-left: .4em;
   width: 33%;
   position: relative;
   color: #fff;
@@ -422,7 +428,7 @@ header h1 {
   z-index: 0;
   background: rgba(0, 0, 0, 0.5);
   width: 100px;
-  right: 0.2em;
+  right: 0.7em;
   height: 100px;
   -o-transform: rotate(30deg) skewY(30deg);
   -ms-transform: rotate(30deg) skewY(30deg);
@@ -450,5 +456,5 @@ header h1 {
   color: #fff;
   margin-right: .25em;
   font-weight: bold;
-  font-size: 1.1em;
+  font-size: 1.3em;
 }
