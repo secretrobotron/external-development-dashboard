@@ -8,6 +8,8 @@ var GAUNTLET_DATA_URL = 'https://script.google.com/macros/s/AKfycbw8CX3mKuOpfEYN
 var GRAPH_FILL_STYLE = 'rgba(34, 147, 209, 0.5)';
 var GRAPH_LINE_STYLE = 'rgba(34, 147, 209, 1.0)';
 var GRAPH_POINT_RADIUS = 10;
+var ACTUAL_LINE_WIDTH = 7;
+var PROJECTION_LINE_WIDTH = 2;
 
 // From http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript
 function formatCurrencyNumber(n, c, d, t){
@@ -157,14 +159,12 @@ function renderChart(data){
 
     for (var i = 0; i < 12; ++i) {
       alignMonthLabel(i, points[i][0]);
-      if (i === currentMonth) {
-        dataPoints[i].classList.add('on');
-        dataPoints[i].classList.add('big');
-      }
       if (monthsWithEvents[i]) {
-        dataPoints[i].classList.add('on');
-        stampOutRadialDataPointBackground(points[i]);
-        positionDataPoint(dataPoints[i], points[i]);
+        if (i !== currentMonth) {
+          dataPoints[i].classList.add('on');
+          stampOutRadialDataPointBackground(points[i]);
+          positionDataPoint(dataPoints[i], points[i]);
+        }
         if (i <= currentMonth) {
           currentEvents = currentEvents || monthsWithEvents[i];
         }
@@ -193,6 +193,12 @@ function renderChart(data){
     var i, p;
     var thisPair, nextPair;
 
+    ctx.lineCap = 'round';
+
+    if(ctx.setLineDash){
+      ctx.setLineDash(0);
+    }
+
     ctx.fillStyle = GRAPH_FILL_STYLE;
 
     ctx.moveTo(pair[0], dataCanvas.height - pair[1]);
@@ -213,21 +219,34 @@ function renderChart(data){
 
     ctx.fillStyle = 'rgba(1, 0, 0, 1.0)';
     ctx.strokeStyle = GRAPH_LINE_STYLE;
-    ctx.lineWidth = 7;
+    ctx.lineWidth = ACTUAL_LINE_WIDTH;
     ctx.lineCap = 'round';
 
     drawLine(points, 0, currentMonth);
+
+    var a = -Math.atan((points[currentMonth][1] - points[currentMonth-1][1]) / (points[currentMonth][0] - points[currentMonth-1][0])) + Math.PI / 2;
+    
+    ctx.lineCap = 'butt';
+    ctx.save();
+    ctx.translate(points[currentMonth][0], dataCanvas.height - points[currentMonth][1]);
+    ctx.scale(2, 2);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.moveTo(-1, 0);
+    ctx.lineTo(1, 0);
+    ctx.lineTo(0, -1.5);
+    ctx.lineTo(-1, 0);
+    ctx.lineTo(1, 0);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawProjections(points, startPoint){
-    ctx.lineWidth = 1;
+    ctx.lineWidth = PROJECTION_LINE_WIDTH;
     ctx.lineCap = 'round';
 
     if(ctx.setLineDash){
       ctx.setLineDash([1, 4]);
-    }
-    else {
-      ctx.lineWidth = 1;
     }
 
     ctx.strokeStyle = '#222';
@@ -247,7 +266,7 @@ function renderChart(data){
   Array.prototype.forEach.call(yMarkers, function(marker, index){
     var value = MAX_Y - ( index / yMarkers.length * MAX_Y );
     var y = chartContentRect.height - chartContentRect.height * value / MAX_Y;
-    marker.querySelector('.dollar-value').innerHTML = formatCurrencyNumber(value, 0, '.', ',');
+    marker.querySelector('.dollar-value').innerHTML = '$' + formatCurrencyNumber(value, 0, '.', ',');
     marker.style.top = y + 'px';
   });
 
@@ -269,7 +288,7 @@ function renderChart(data){
 
   var targetContainer = document.querySelector('.target');
   targetContainer.style.top = chartContentRect.height - chartContentRect.height * TARGET / MAX_Y - targetContainer.offsetHeight / 2 + 'px';
-  removeAllChildren(targetContainer.querySelector('.value')).appendChild(document.createTextNode(formatCurrencyNumber(TARGET, 0, '.', ',')));
+  removeAllChildren(targetContainer.querySelector('.value')).appendChild(document.createTextNode('$' + formatCurrencyNumber(TARGET, 0, '.', ',')));
 
   var points = calculatePoints();
   drawProjections(points);

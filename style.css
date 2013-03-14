@@ -13,7 +13,6 @@ body {
   overflow: hidden;
 
   color: #222;
-  font-family: helvetica;
   font-family: 'Droid Sans', sans-serif, helvetica;
   font-size: 20pt;
 }
@@ -43,11 +42,10 @@ header h1 {
   right: 0;
   width: 20%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.8);
 }
 
 .side-panel .title.num-users {
-  color: #C13832;
   font-size: 2em;
   font-weight: bold;
   margin: 0;
@@ -55,10 +53,16 @@ header h1 {
 
 .side-panel .title.support {
   margin-top: 0;
+  font-size: 0.4em;
 }
 
 .side-panel .title.partners {
   margin-top: 3em;
+  font-size: 0.4em;
+}
+
+.side-panel .title.like-you {
+  font-size: 0.7em;
 }
 
 .main-panel .container {
@@ -245,28 +249,23 @@ header h1 {
 
 .data-point {
   position: absolute;
-  border: 5px solid rgba(239, 73, 34, 1.0);
-  width: 0;
-  height: 0;
-  border-radius: 7px;
   z-index: 2;
-  margin-top: -5px;
-  margin-left: -5px;
+  border: 7px solid rgba(34, 147, 209, 1.0);
+  margin-top: -11px;
+  margin-left: -11px;
+  width: 11px;
+  height: 11px;
+  border-radius: 17px;
   visibility: hidden;
+  cursor: pointer;
+}
+
+.data-point:hover {
+  background: rgba(239, 73, 34, 0.8);
 }
 
 .data-point.on {
   visibility: visible;
-}
-
-.data-point.big {
-  border-width: 7px;
-  border-color: rgba(34, 147, 209, 1.0);
-  margin-top: -14px;
-  margin-left: -14px;
-  width: 13px;
-  height: 13px;
-  border-radius: 14px;
 }
 
 .data-canvas {
@@ -284,12 +283,81 @@ header h1 {
   text-shadow: 1px 1px 2px #000;  
 }
 
-.side-panel ul {
-  list-style: none;
-  padding: 0;
-  margin: 1em;
+.side-panel .funder-container {
+  width: 100%;
+  position: relative;
+  padding: 0 1em;
   margin-bottom: 1em;
   margin-top: .2em;
+  overflow: hidden;
+}
+
+@keyframes funder-slide {
+  0% { left: 0; }
+  25% { left: 0; }
+  30% { left: -100%; }
+  70% { left: -100%; }
+  75% { left: 0; }
+  100% { left: 0; }
+}
+
+@-moz-keyframes funder-slide {
+  0% { left: 0; }
+  25% { left: 0; }
+  30% { left: -100%; }
+  70% { left: -100%; }
+  75% { left: 0; }
+  100% { left: 0; }
+}
+
+@-webkit-keyframes funder-slide {
+  0% { left: 0; }
+  25% { left: 0; }
+  30% { left: -100%; }
+  70% { left: -100%; }
+  75% { left: 0; }
+  100% { left: 0; }
+}
+
+@-o-keyframes funder-slide {
+  0% { left: 0; }
+  25% { left: 0; }
+  30% { left: -100%; }
+  70% { left: -100%; }
+  75% { left: 0; }
+  100% { left: 0; }
+}
+
+@-ms-keyframes funder-slide {
+  0% { left: 0; }
+  25% { left: 0; }
+  30% { left: -100%; }
+  70% { left: -100%; }
+  75% { left: 0; }
+  100% { left: 0; }
+}
+
+.side-panel ul {
+  position: relative;
+  width: 200%;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  -webkit-column-count: 2;
+  -webkit-column-gap: 0;
+  -moz-column-count: 2;
+  -moz-column-gap: 0;
+  -webkit-column-span: all;
+  -moz-column-span: all;
+  transition: left .8s ease-in-out;
+  -webkit-transition: left .8s ease-in-out;
+  -moz-transition: left .8s ease-in-out;
+  -o-transition: left .8s ease-in-out;
+  animation: funder-slide 20s ease-in-out 0 infinite normal both;
+  -moz-animation: funder-slide 20s ease-in-out 0 infinite normal both;
+  -webkit-animation: funder-slide 20s ease-in-out 0 infinite normal both;
+  -o-animation: funder-slide 20s ease-in-out 0 infinite normal both;
+  -ms-animation: funder-slide 20s ease-in-out 0 infinite normal both;
 }
 
 .side-panel ul li {
@@ -315,6 +383,7 @@ header h1 {
   width: 100%;
   position: absolute;
   z-index: 2;
+  pointer-events: none;
 }
 
 .target .label {
@@ -346,7 +415,7 @@ header h1 {
   z-index: 0;
   background: rgba(0, 0, 0, 0.5);
   width: 100px;
-  right: 0;
+  right: 0.2em;
   height: 100px;
   -o-transform: rotate(30deg) skewY(30deg);
   -ms-transform: rotate(30deg) skewY(30deg);
@@ -357,23 +426,14 @@ header h1 {
 }
 
 .target .line {
-  width: 100%;
+  width: 101%;
   height: 5px;
   background: rgba(239, 73, 34, 0.8);
   position: absolute;
   top: 50%;
-  margin-top: -2.5px;  
-}
-
-.target .line .arrow {
-  width: 0;
-  height: 0;
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  border-left: 15px solid rgba(239, 73, 34, 0.8);
-  position: absolute;
-  right: -15px;
-  top: -7px;  
+  margin-top: -2.5px;
+  border-bottom-right-radius: 5px;
+  border-top-right-radius: 5px;
 }
 
 .target .value {
@@ -381,7 +441,7 @@ header h1 {
   right: 0;
   top: 0;
   color: #fff;
-  margin-right: .3em;
+  margin-right: .25em;
   font-weight: bold;
   font-size: 1.1em;
 }
