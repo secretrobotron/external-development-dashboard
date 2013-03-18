@@ -286,6 +286,10 @@ function renderChart (data) {
         nextEvent = nextEvent || eventBoxContent;
         nextEventDataPoint = nextEventDataPoint || dataPoint;
       });
+
+      setTimeout(function(){
+        drawMetaCanvasProjectionBoxTo(nextEventDataPoint);
+      }, 1000);
     }
 
     removeAllChildren(dataPointContainer);
