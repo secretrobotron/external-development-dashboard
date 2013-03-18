@@ -299,86 +299,28 @@ header h1 {
 .side-panel .funder-container {
   width: 100%;
   position: relative;
-  padding: 0 1em;
   margin-bottom: 1em;
   margin-top: .2em;
   overflow: hidden;
-}
-
-@keyframes funder-slide {
-  0% { left: 0; }
-  25% { left: 0; }
-  30% { left: -100%; }
-  70% { left: -100%; }
-  75% { left: 0; }
-  100% { left: 0; }
-}
-
-@-moz-keyframes funder-slide {
-  0% { left: 0; }
-  25% { left: 0; }
-  30% { left: -100%; }
-  70% { left: -100%; }
-  75% { left: 0; }
-  100% { left: 0; }
-}
-
-@-webkit-keyframes funder-slide {
-  0% { left: 0; }
-  25% { left: 0; }
-  30% { left: -100%; }
-  70% { left: -100%; }
-  75% { left: 0; }
-  100% { left: 0; }
-}
-
-@-o-keyframes funder-slide {
-  0% { left: 0; }
-  25% { left: 0; }
-  30% { left: -100%; }
-  70% { left: -100%; }
-  75% { left: 0; }
-  100% { left: 0; }
-}
-
-@-ms-keyframes funder-slide {
-  0% { left: 0; }
-  25% { left: 0; }
-  30% { left: -100%; }
-  70% { left: -100%; }
-  75% { left: 0; }
-  100% { left: 0; }
+  height: 200px;
 }
 
 .side-panel ul {
-  position: relative;
-  width: 200%;
+  position: absolute;
+  width: 100%;
   list-style: none;
   padding: 0;
-  margin: 0;
-  -webkit-column-count: 2;
-  -webkit-column-gap: 0;
-  -moz-column-count: 2;
-  -moz-column-gap: 0;
-  -webkit-column-span: all;
-  -moz-column-span: all;
-  transition: left .8s ease-in-out;
-  -webkit-transition: left .8s ease-in-out;
-  -moz-transition: left .8s ease-in-out;
-  -o-transition: left .8s ease-in-out;
-  animation: funder-slide 20s ease-in-out 0 infinite normal both;
-  -moz-animation: funder-slide 20s ease-in-out 0 infinite normal both;
-  -webkit-animation: funder-slide 20s ease-in-out 0 infinite normal both;
-  -o-animation: funder-slide 20s ease-in-out 0 infinite normal both;
-  -ms-animation: funder-slide 20s ease-in-out 0 infinite normal both;
+  margin: 0 0 0 1em;
+  top: 120%;
 }
 
 .side-panel ul li {
   color: #fff;
   font-size: .5em;
   list-style-position: inside;
-  margin-left: 1.5em;
+  margin-left: 1em;
   margin-top: .5em;
+  width: 80%;
   margin-bottom: .5em;
   text-indent: -1em;
 }

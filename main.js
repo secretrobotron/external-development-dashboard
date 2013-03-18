@@ -1,5 +1,14 @@
 (function(){
 
+var requestAnimFrame = (function(){
+  return  window.requestAnimationFrame       ||
+          window.webkitRequestAnimationFrame ||
+          window.mozRequestAnimationFrame    ||
+          function( callback ){
+            window.setTimeout(callback, 1000 / 60);
+          };
+})();
+
 var TARGET = 6500000;
 var REACH_TARGET = 9000000;
 var MAX_Y = 8000000;
@@ -286,9 +295,12 @@ function renderChart(data){
 
     if(ctx.setLineDash){
       ctx.setLineDash([1, 4]);
+      ctx.strokeStyle = '#222';
+    }
+    else {
+      ctx.strokeStyle = '#aaa';
     }
 
-    ctx.strokeStyle = '#222';
     drawLine(points, currentMonth, 12);
   }
 
@@ -335,11 +347,45 @@ function setup(data){
   window.addEventListener('resize', function(e){
     renderChart(data);
   }, false);
+
+  document.querySelector('.side-panel .num-users').innerHTML = formatCurrencyNumber(data.donations.contributorCount, 0, '.', ',');
+
+  var funderContainer = document.querySelector('.funder-container');
+  var funderList = funderContainer.querySelector('ul');
+  
+  function funderListLoop (funderList) {
+    var y = 0;
+    var startTime = Date.now();
+    var height = funderList.offsetTop + funderList.offsetHeight + funderContainer.offsetHeight;
+
+    function iterate () {
+      var time = Date.now();
+      var y = -height * (((time - startTime) % 20000) / 20000);
+      var transformString = 'translate(0px,' + y + 'px)';
+
+      funderList.style.transform = transformString;
+      funderList.style.webkitTransform = transformString;
+      funderList.style.MozTransform = transformString;
+      funderList.style.msTransform = transformString;
+      funderList.style.OTransform = transformString;
+
+      requestAnimFrame(iterate);
+    }
+
+    requestAnimFrame(iterate);
+  }
+  
+  funderListLoop(funderList);
 }
 
 document.addEventListener('DOMContentLoaded', function(e){
   if(window.location.search.indexOf('test') > -1){
-    setup({"donations":{"projections":[35000,11000,111000,51000,11000,21000,21000,26000,291000,71000,21000,611000],"actuals":[33295.71,0,0,0,0,0,0,0,0,0,0,0],"events":{"Humble Bundle ":{"dates":[2,8],"description":"description"},"Manifesto v1.0":{"dates":[3],"description":"description"},"Summer Code Party":{"dates":[5,6,7,8],"description":"description"},"Mozfest Contest":{"dates":[8,9],"description":"description"},"Mozfest Tickets":{"dates":[7,8,9],"description":"description"}}},"grantsAndGifts":{"initiated":[{"value":9930,"date":1325404800000},{"value":83708,"date":1325404800000},{"value":115000,"date":1293868800000},{"value":1000000,"date":1325404800000},{"value":100000,"date":1325404800000},{"value":625387,"date":1293868800000},{"value":79705,"date":1325404800000},{"value":173000,"date":1325404800000},{"value":287500,"date":1325404800000},{"value":288800,"date":1325404800000}],"uninitiated":[{"value":15200,"date":1370070000000},{"value":95000,"date":1364799600000},{"value":12000,"date":1380610800000},{"value":22500,"date":1378018800000},{"value":90000,"date":1367391600000},{"value":100000,"date":1370070000000},{"value":12000,"date":1364799600000},{"value":9000,"date":1380610800000},{"value":20000,"date":1367391600000},{"value":180000,"date":1362124800000},{"value":249880,"date":1370070000000},{"value":1200000,"date":1370070000000},{"value":50000,"date":1370070000000},{"value":180000,"date":1378018800000},{"value":20000,"date":1370070000000},{"value":10000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":5000,"date":1370070000000},{"value":10000,"date":1375340400000},{"value":100000,"date":1372662000000},{"value":175000,"date":1372662000000},{"value":17190,"date":1378018800000},{"value":37500,"date":1383289200000},{"value":93611,"date":1346482800000},{"value":150000,"date":1367391600000},{"value":16000,"date":1378018800000},{"value":8000,"date":1370070000000},{"value":15000,"date":1372662000000},{"value":60000,"date":1367391600000},{"value":6000,"date":1380610800000},{"value":49999.99999999999,"date":1378018800000},{"value":4000,"date":1367391600000},{"value":0,"date":""}]}});
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function(){
+      setup(JSON.parse(xhr.response));
+    };
+    xhr.open('GET', 'test.json', false);
+    xhr.send();
   }
   else{
     getJSONP(GAUNTLET_DATA_URL, function(json){
