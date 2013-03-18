@@ -164,13 +164,17 @@ function renderChart (data) {
     label.style.left = x - label.offsetWidth / 2 + 'px';
   }
 
-  function drawMetaCanvasProjectionBoxTo (dataPoint) {
+  function drawMetaCanvasProjectionBoxFromDataPoint (dataPoint) {
+    drawMetaCanvasProjectionBoxTo(dataPoint.offsetLeft + dataPoint.offsetWidth / 2, dataPoint.offsetTop + dataPoint.offsetHeight / 2);
+  }
+
+  function drawMetaCanvasProjectionBoxTo (x, y) {
     var ctx = metaCanvas.getContext('2d');
     var eventsRect = eventsContainer.getBoundingClientRect();
     ctx.fillStyle = 'rgba(239, 73, 34, 1.0)';
     ctx.beginPath();
-    ctx.moveTo(dataPoint.offsetLeft + dataPoint.offsetWidth / 2, dataPoint.offsetTop + dataPoint.offsetHeight / 2);
-    if (dataPoint.offsetLeft > eventsContainer.offsetLeft) {
+    ctx.moveTo(x, y);
+    if (x > eventsContainer.offsetLeft) {
       ctx.lineTo(eventsContainer.offsetLeft + eventsContainer.clientLeft * 2, eventsContainer.offsetTop + eventsContainer.clientLeft * 2);
     }
     else {
@@ -180,16 +184,19 @@ function renderChart (data) {
     ctx.closePath();
     ctx.fill();
 
-    stampOutRadialDataPointBackground(  dataPoint.offsetLeft + dataPoint.offsetWidth / 2,
-                                          dataPoint.offsetTop + dataPoint.offsetHeight / 2,
-                                        GRAPH_POINT_RADIUS, 0, ctx);
+    stampOutRadialDataPointBackground(x, y, GRAPH_POINT_RADIUS, 0, ctx);
+
     if (metaCanvasWaitTimeout) {
       clearTimeout(metaCanvasWaitTimeout);
       metaCanvasWaitTimeout = null;
     }
   }
 
-  function waitAndDrawMetaCanvasProjection (dataPoint) {
+  function waitAndDrawMetaCanvasProjectionFromDataPoint (dataPoint) {
+    waitAndDrawMetaCanvasProjection(dataPoint.offsetLeft + dataPoint.offsetWidth / 2, dataPoint.offsetTop + dataPoint.offsetHeight / 2);
+  }
+
+  function waitAndDrawMetaCanvasProjection (x, y) {
     if (metaCanvasWaitTimeout) {
       clearTimeout(metaCanvasWaitTimeout);
     }
@@ -197,7 +204,7 @@ function renderChart (data) {
       clearTimeout(metaCanvasWaitTimeout);
       metaCanvasWaitTimeout = null;
       clearMetaCanvasProjection();
-      drawMetaCanvasProjectionBoxTo(dataPoint);
+      drawMetaCanvasProjectionBoxTo(x, y);
     }, META_CANVAS_WAIT_TIMEOUT);
   }
 
@@ -212,7 +219,7 @@ function renderChart (data) {
   }
 
   function plotEvents (points) {
-    var nextEvent, nextEventDataPoint;
+    var nextEvent, nextEventDataPoint, nextEventPosition;
     var eventsBox = document.querySelector('.events');
     var dataPointContainer = document.querySelector('.data-points');
 
@@ -249,14 +256,16 @@ function renderChart (data) {
           dataPoint.classList.add('small');
         }
 
-        stampOutRadialDataPointBackground(points[monthIndex][0], dataCanvas.height - points[monthIndex][1], radius, offset);
-        dataPoint.style.left = points[monthIndex][0] + 'px';
-        dataPoint.style.top = chartContentRect.height -
+        var x = points[monthIndex][0];
+        var y = chartContentRect.height -
           points[monthIndex][1] +
           eventIndex * radius * 1.8 -
           (monthsWithEvents[monthIndex].length - 1) / 2 * radius * 1.8 +
-          offset +
-          'px';
+          offset;
+
+        stampOutRadialDataPointBackground(points[monthIndex][0], dataCanvas.height - points[monthIndex][1], radius, offset);
+        dataPoint.style.left = x + 'px';
+        dataPoint.style.top = y + 'px';
 
         dataPoint.onmouseover = function(e) {
           Array.prototype.forEach.call(eventsBox.childNodes, function(child) {
@@ -264,7 +273,7 @@ function renderChart (data) {
           });
           eventBoxContent.hidden = false;
           clearMetaCanvasProjection();
-          drawMetaCanvasProjectionBoxTo(dataPoint);
+          drawMetaCanvasProjectionBoxFromDataPoint(dataPoint);
         };
 
         dataPoint.onmouseout = function(e) {
@@ -273,10 +282,10 @@ function renderChart (data) {
           if (nextEvent) {
             nextEvent.hidden = false;
             if (dataPoint === nextEventDataPoint) {
-              drawMetaCanvasProjectionBoxTo(dataPoint);
+              drawMetaCanvasProjectionBoxFromDataPoint(dataPoint);
             }
             else {
-              waitAndDrawMetaCanvasProjection(nextEventDataPoint);
+              waitAndDrawMetaCanvasProjectionFromDataPoint(nextEventDataPoint);
             }
           }
         };
@@ -285,11 +294,8 @@ function renderChart (data) {
 
         nextEvent = nextEvent || eventBoxContent;
         nextEventDataPoint = nextEventDataPoint || dataPoint;
+        nextEventPosition = nextEventPosition || [x, y];
       });
-
-      setTimeout(function(){
-        drawMetaCanvasProjectionBoxTo(nextEventDataPoint);
-      }, 1000);
     }
 
     removeAllChildren(dataPointContainer);
@@ -305,6 +311,7 @@ function renderChart (data) {
     }
 
     if (nextEvent) {
+      waitAndDrawMetaCanvasProjection(nextEventPosition[0], nextEventPosition[1]);
       nextEvent.hidden = false; 
     }
 
@@ -417,9 +424,19 @@ function renderChart (data) {
 }
 
 function setup (data) {
+  var resizeTimeout = null;
+
   renderChart(data);
-  window.addEventListener('resize', function(e){
-    renderChart(data);
+
+  window.addEventListener('resize', function (e) {
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+    }
+    resizeTimeout = setTimeout(function(){
+      clearTimeout(resizeTimeout);
+      resizeTimeout = null;
+      renderChart(data);
+    }, 250);
   }, false);
 
   document.querySelector('.side-panel .num-users').innerHTML = formatCurrencyNumber(data.donations.contributorCount, 0, '.', ',');
