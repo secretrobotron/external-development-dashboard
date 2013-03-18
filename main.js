@@ -20,6 +20,7 @@ var GRAPH_POINT_RADIUS = 10;
 var GRAPH_POINT_RADIUS_SMALL = 7;
 var ACTUAL_LINE_WIDTH = 7;
 var PROJECTION_LINE_WIDTH = 2;
+var FUNDER_SCROLL_TIME = 17000;
 
 // From http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript
 function formatCurrencyNumber(n, c, d, t){
@@ -352,15 +353,35 @@ function setup(data){
 
   var funderContainer = document.querySelector('.funder-container');
   var funderList = funderContainer.querySelector('ul');
-  
-  function funderListLoop (funderList) {
+  var funderListClone = funderList.cloneNode(true);
+
+  function funderListLoop (funderList, offset) {
     var y = 0;
-    var startTime = Date.now();
-    var height = funderList.offsetTop + funderList.offsetHeight + funderContainer.offsetHeight;
+    var startTime;
+    var lastTime = Date.now();
+    offset = offset || 0;
+
+    var introHeight = funderContainer.offsetHeight;
 
     function iterate () {
       var time = Date.now();
-      var y = -height * (((time - startTime) % 20000) / 20000);
+
+      // height is retrieved in iterate() to lazily correct for inaccurate measures while page is loading fully
+      var height = funderList.offsetHeight;
+
+      var y;
+
+      if (introHeight > 0) {
+        // be careful when altering this code. it is assumed that the pixel heights of the <li> elements won't change.
+        // if they do, this distance calculation will be innacurate.
+        y = introHeight + offset * height;
+        introHeight -= (height / FUNDER_SCROLL_TIME) * (time - lastTime);
+        startTime = time;
+      }
+      else {
+        y = -height * (((time - startTime) % FUNDER_SCROLL_TIME) / FUNDER_SCROLL_TIME) + offset * height;
+      }
+      
       var transformString = 'translate(0px,' + y + 'px)';
 
       funderList.style.transform = transformString;
@@ -369,6 +390,8 @@ function setup(data){
       funderList.style.msTransform = transformString;
       funderList.style.OTransform = transformString;
 
+      lastTime = time;
+
       requestAnimFrame(iterate);
     }
 
@@ -376,6 +399,8 @@ function setup(data){
   }
   
   funderListLoop(funderList);
+  funderContainer.appendChild(funderListClone);
+  funderListLoop(funderListClone, 1);
 }
 
 document.addEventListener('DOMContentLoaded', function(e){
