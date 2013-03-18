@@ -24,7 +24,7 @@ var FUNDER_SCROLL_TIME = 17000;
 
 // From http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript
 function formatCurrencyNumber(n, c, d, t){
-  var c = isNaN(c = Math.abs(c)) ? 2 : c, d = d == undefined ? "," : d, t = t == undefined ? "." : t, s = n < 0 ? "-" : "", i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + "", j = (j = i.length) > 3 ? j % 3 : 0;
+  c = isNaN(c = Math.abs(c)) ? 2 : c, d = d === undefined ? "," : d, t = t === undefined ? "." : t, s = n < 0 ? "-" : "", i = parseInt(n = Math.abs(+n || 0).toFixed(c), 10) + "", j = (j = i.length) > 3 ? j % 3 : 0;
   return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
 }
 
@@ -101,8 +101,6 @@ function prepareData(data){
 }
 
 function renderChart(data){
-  var actualData = data.actual;
-  var projectedData = data.projected;
   var chartContainer = document.querySelector('.main-panel > .container');
   var chartContent = chartContainer.querySelector('.chart-content');
   var xAxis = chartContainer.querySelector('.x-axis');
@@ -176,6 +174,54 @@ function renderChart(data){
       return li;
     }
 
+    function plotMonth (month, monthIndex) {
+      month.forEach(function(eventData, eventIndex){
+        var eventBoxContent = createEventBoxContent(eventData);
+        eventsBox.appendChild(eventBoxContent);
+
+        var offset = 0;
+        var radius = GRAPH_POINT_RADIUS;
+
+        var dataPoint = document.createElement('div');
+        dataPoint.classList.add('data-point');
+        dataPoint.classList.add('on');
+        dataPointContainer.appendChild(dataPoint);
+
+        if (monthIndex === currentMonth) {
+          offset = GRAPH_POINT_RADIUS * 2.5;
+          radius = GRAPH_POINT_RADIUS_SMALL * 2.5;
+          dataPoint.classList.add('small');
+        }
+
+        stampOutRadialDataPointBackground(points[monthIndex], radius, offset);
+        dataPoint.style.left = points[monthIndex][0] + 'px';
+        dataPoint.style.top = chartContentRect.height -
+          points[monthIndex][1] +
+          eventIndex * radius * 1.8 -
+          (monthsWithEvents[monthIndex].length - 1) / 2 * radius * 1.8 +
+          offset +
+          'px';
+
+        dataPoint.onmouseover = function(e) {
+          Array.prototype.forEach.call(eventsBox.childNodes, function(child) {
+            child.hidden = true;
+          });
+          eventBoxContent.hidden = false;
+        };
+
+        dataPoint.onmouseout = function(e) {
+          eventBoxContent.hidden = true;
+          if (nextEvent) {
+            nextEvent.hidden = false;
+          }
+        };
+
+        eventBoxContent.hidden = true;
+
+        nextEvent = nextEvent || eventBoxContent;
+      });
+    }
+
     removeAllChildren(dataPointContainer);
     removeAllChildren(eventsBox);
 
@@ -183,50 +229,7 @@ function renderChart(data){
       alignMonthLabel(i, points[i][0]);
       if (i >= currentMonth) {
         if (monthsWithEvents[i]) {
-          monthsWithEvents[i].forEach(function(eventData, eventIndex){
-            var eventBoxContent = createEventBoxContent(eventData);
-            eventsBox.appendChild(eventBoxContent);
-
-            var offset = 0;
-            var radius = GRAPH_POINT_RADIUS;
-
-            var dataPoint = document.createElement('div');
-            dataPoint.classList.add('data-point');
-            dataPoint.classList.add('on');
-            dataPointContainer.appendChild(dataPoint);
-
-            if (i === currentMonth) {
-              offset = GRAPH_POINT_RADIUS * 2.5;
-              radius = GRAPH_POINT_RADIUS_SMALL * 2.5;
-              dataPoint.classList.add('small');
-            }
-
-            stampOutRadialDataPointBackground(points[i], radius, offset);
-            dataPoint.style.left = points[i][0] + 'px';
-            dataPoint.style.top = chartContentRect.height
-              - points[i][1]
-              + eventIndex * radius * 1.8
-              - (monthsWithEvents[i].length - 1) / 2 * radius * 1.8
-              + offset
-              + 'px';
-
-            dataPoint.onmouseover = function(e) {
-              Array.prototype.forEach.call(eventsBox.childNodes, function(child) {
-                child.hidden = true;
-              });
-              eventBoxContent.hidden = false;
-            };
-            dataPoint.onmouseout = function(e) {
-              eventBoxContent.hidden = true;
-              if (nextEvent) {
-                nextEvent.hidden = false;
-              }
-            };
-
-            eventBoxContent.hidden = true;
-
-            nextEvent = nextEvent || eventBoxContent;
-          });
+          plotMonth(monthsWithEvents[i], i);
         }
       }
     }
