@@ -293,6 +293,12 @@ header h1 {
   height: 100%;
 }
 
+.meta-canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
 .glorious-dead-logo p {
   font-size: .5em;
   text-align: center;

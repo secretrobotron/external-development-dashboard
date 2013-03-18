@@ -21,21 +21,22 @@ var GRAPH_POINT_RADIUS_SMALL = 7;
 var ACTUAL_LINE_WIDTH = 7;
 var PROJECTION_LINE_WIDTH = 2;
 var FUNDER_SCROLL_TIME = 17000;
+var META_CANVAS_WAIT_TIMEOUT = 500;
 
 // From http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript
-function formatCurrencyNumber(n, c, d, t){
+function formatCurrencyNumber (n, c, d, t) {
   c = isNaN(c = Math.abs(c)) ? 2 : c, d = d === undefined ? "," : d, t = t === undefined ? "." : t, s = n < 0 ? "-" : "", i = parseInt(n = Math.abs(+n || 0).toFixed(c), 10) + "", j = (j = i.length) > 3 ? j % 3 : 0;
   return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
 }
 
-function removeAllChildren(node){
+function removeAllChildren (node) {
   while(node.firstChild){
     node.removeChild(node.firstChild);
   }
   return node;
 }
 
-function getJSONP(url, readyCallback){
+function getJSONP (url, readyCallback) {
   var script = document.createElement('script');
   var callbackName = 'jsonpCallback' + Date.now() + Math.round(Math.random() * 100000);
 
@@ -50,7 +51,7 @@ function getJSONP(url, readyCallback){
   };
 }
 
-function prepareData(data){
+function prepareData (data) {
   var januaryDate = new Date('January 1, 2013').valueOf();
   var currentDate = new Date(Date.now());
   var currentMonth = currentDate.getMonth();
@@ -100,17 +101,21 @@ function prepareData(data){
   return monthlyValues;
 }
 
-function renderChart(data){
+function renderChart (data) {
   var chartContainer = document.querySelector('.main-panel > .container');
   var chartContent = chartContainer.querySelector('.chart-content');
   var xAxis = chartContainer.querySelector('.x-axis');
   var xAxisLabels = xAxis.querySelectorAll('li');
   var dataCanvas = chartContainer.querySelector('.data-canvas');
+  var metaCanvas = chartContainer.querySelector('.meta-canvas');
+  var eventsContainer = document.querySelector('.events');
 
   var chartContentRect = chartContent.getBoundingClientRect();
 
   dataCanvas.width = chartContentRect.width;
   dataCanvas.height = chartContentRect.height;
+  metaCanvas.width = chartContentRect.width;
+  metaCanvas.height = chartContentRect.height;
 
   var actualPoints = [];
   var projectedPoints = [];
@@ -124,16 +129,18 @@ function renderChart(data){
 
   var startX = xAxisLabels[0].offsetWidth;
 
-  var ctx = dataCanvas.getContext('2d');
+  var dataCtx = dataCanvas.getContext('2d');
 
-  function getPositionVector(index) {
+  var metaCanvasWaitTimeout = null;
+
+  function getPositionVector (index) {
     return [
       startX + chartContentRect.width / xAxisLabels.length * index,
       chartContentRect.height * montlyData[index] / MAX_Y
     ];
   }
 
-  function calculatePoints(){
+  function calculatePoints () {
     var points = [];
     for (var i = 0; i <= 12; ++i) {
       points.push(getPositionVector(i));
@@ -141,22 +148,71 @@ function renderChart(data){
     return points;
   }
 
-  function stampOutRadialDataPointBackground(point, radius, offset) {
+  function stampOutRadialDataPointBackground (x, y, radius, offset, ctx) {
+    ctx = ctx || dataCtx;
+    var previousCompositeOperation = ctx.globalCompositeOperation;
     offset = offset || 0;
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(point[0], dataCanvas.height - point[1] + offset, GRAPH_POINT_RADIUS, 0, Math.PI * 2, true);
+    ctx.arc(x, y + offset, GRAPH_POINT_RADIUS, 0, Math.PI * 2, true);
     ctx.fill();
-    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalCompositeOperation = previousCompositeOperation;
   }
 
-  function alignMonthLabel(index, x){
+  function alignMonthLabel (index, x) {
     var label = xAxisLabels[index];
     label.style.left = x - label.offsetWidth / 2 + 'px';
   }
 
+  function drawMetaCanvasProjectionBoxTo (dataPoint) {
+    var ctx = metaCanvas.getContext('2d');
+    var eventsRect = eventsContainer.getBoundingClientRect();
+    ctx.fillStyle = 'rgba(239, 73, 34, 1.0)';
+    ctx.beginPath();
+    ctx.moveTo(dataPoint.offsetLeft + dataPoint.offsetWidth / 2, dataPoint.offsetTop + dataPoint.offsetHeight / 2);
+    if (dataPoint.offsetLeft > eventsContainer.offsetLeft) {
+      ctx.lineTo(eventsContainer.offsetLeft + eventsContainer.clientLeft * 2, eventsContainer.offsetTop + eventsContainer.clientLeft * 2);
+    }
+    else {
+      ctx.lineTo(eventsContainer.offsetLeft + eventsContainer.clientLeft * 2, eventsContainer.offsetTop + eventsContainer.offsetHeight);
+    }
+    ctx.lineTo(eventsContainer.offsetLeft + eventsContainer.offsetWidth, eventsContainer.offsetTop + eventsContainer.clientLeft * 2);
+    ctx.closePath();
+    ctx.fill();
+
+    stampOutRadialDataPointBackground(  dataPoint.offsetLeft + dataPoint.offsetWidth / 2,
+                                          dataPoint.offsetTop + dataPoint.offsetHeight / 2,
+                                        GRAPH_POINT_RADIUS, 0, ctx);
+    if (metaCanvasWaitTimeout) {
+      clearTimeout(metaCanvasWaitTimeout);
+      metaCanvasWaitTimeout = null;
+    }
+  }
+
+  function waitAndDrawMetaCanvasProjection (dataPoint) {
+    if (metaCanvasWaitTimeout) {
+      clearTimeout(metaCanvasWaitTimeout);
+    }
+    metaCanvasWaitTimeout = setTimeout(function(){
+      clearTimeout(metaCanvasWaitTimeout);
+      metaCanvasWaitTimeout = null;
+      clearMetaCanvasProjection();
+      drawMetaCanvasProjectionBoxTo(dataPoint);
+    }, META_CANVAS_WAIT_TIMEOUT);
+  }
+
+  function clearMetaCanvasProjection () {
+    var ctx = metaCanvas.getContext('2d');
+    ctx.clearRect(0, 0, metaCanvas.width, metaCanvas.height);
+
+    if (metaCanvasWaitTimeout) {
+      clearTimeout(metaCanvasWaitTimeout);
+      metaCanvasWaitTimeout = null;
+    }
+  }
+
   function plotEvents (points) {
-    var nextEvent;
+    var nextEvent, nextEventDataPoint;
     var eventsBox = document.querySelector('.events');
     var dataPointContainer = document.querySelector('.data-points');
 
@@ -193,7 +249,7 @@ function renderChart(data){
           dataPoint.classList.add('small');
         }
 
-        stampOutRadialDataPointBackground(points[monthIndex], radius, offset);
+        stampOutRadialDataPointBackground(points[monthIndex][0], dataCanvas.height - points[monthIndex][1], radius, offset);
         dataPoint.style.left = points[monthIndex][0] + 'px';
         dataPoint.style.top = chartContentRect.height -
           points[monthIndex][1] +
@@ -207,18 +263,28 @@ function renderChart(data){
             child.hidden = true;
           });
           eventBoxContent.hidden = false;
+          clearMetaCanvasProjection();
+          drawMetaCanvasProjectionBoxTo(dataPoint);
         };
 
         dataPoint.onmouseout = function(e) {
           eventBoxContent.hidden = true;
+          clearMetaCanvasProjection();
           if (nextEvent) {
             nextEvent.hidden = false;
+            if (dataPoint === nextEventDataPoint) {
+              drawMetaCanvasProjectionBoxTo(dataPoint);
+            }
+            else {
+              waitAndDrawMetaCanvasProjection(nextEventDataPoint);
+            }
           }
         };
 
         eventBoxContent.hidden = true;
 
         nextEvent = nextEvent || eventBoxContent;
+        nextEventDataPoint = nextEventDataPoint || dataPoint;
       });
     }
 
@@ -240,81 +306,81 @@ function renderChart(data){
 
   }
 
-  function drawActuals(points){
+  function drawActuals (points) {
     var pair = points[0];
     var i, p;
     var thisPair, nextPair;
 
-    ctx.lineCap = 'round';
+    dataCtx.lineCap = 'round';
 
-    if(ctx.setLineDash){
-      ctx.setLineDash(0);
+    if(dataCtx.setLineDash){
+      dataCtx.setLineDash(0);
     }
 
-    ctx.fillStyle = GRAPH_FILL_STYLE;
+    dataCtx.fillStyle = GRAPH_FILL_STYLE;
 
-    ctx.moveTo(pair[0], dataCanvas.height - pair[1]);
-    ctx.beginPath();
+    dataCtx.moveTo(pair[0], dataCanvas.height - pair[1]);
+    dataCtx.beginPath();
 
     for (i = 1; i <= currentMonth; ++i) {
       pair = points[i];
-      ctx.lineTo(pair[0], dataCanvas.height - pair[1]);
+      dataCtx.lineTo(pair[0], dataCanvas.height - pair[1]);
     }
 
     pair = points[currentMonth];
 
-    ctx.lineTo(pair[0], dataCanvas.height);
-    ctx.lineTo(startX, dataCanvas.height);
-    ctx.lineTo(startX, dataCanvas.height - points[0][1]);
+    dataCtx.lineTo(pair[0], dataCanvas.height);
+    dataCtx.lineTo(startX, dataCanvas.height);
+    dataCtx.lineTo(startX, dataCanvas.height - points[0][1]);
 
-    ctx.fill();
+    dataCtx.fill();
 
-    ctx.fillStyle = 'rgba(1, 0, 0, 1.0)';
-    ctx.strokeStyle = GRAPH_LINE_STYLE;
-    ctx.lineWidth = ACTUAL_LINE_WIDTH;
-    ctx.lineCap = 'round';
+    dataCtx.fillStyle = 'rgba(1, 0, 0, 1.0)';
+    dataCtx.strokeStyle = GRAPH_LINE_STYLE;
+    dataCtx.lineWidth = ACTUAL_LINE_WIDTH;
+    dataCtx.lineCap = 'round';
 
     drawLine(points, 0, currentMonth);
 
     var a = -Math.atan((points[currentMonth][1] - points[currentMonth-1][1]) / (points[currentMonth][0] - points[currentMonth-1][0])) + Math.PI / 2;
     
-    ctx.lineCap = 'butt';
-    ctx.save();
-    ctx.translate(points[currentMonth][0], dataCanvas.height - points[currentMonth][1]);
-    ctx.scale(2, 2);
-    ctx.rotate(a);
-    ctx.beginPath();
-    ctx.moveTo(-1, 0);
-    ctx.lineTo(1, 0);
-    ctx.lineTo(0, -1.5);
-    ctx.lineTo(-1, 0);
-    ctx.lineTo(1, 0);
-    ctx.stroke();
-    ctx.restore();
+    dataCtx.lineCap = 'butt';
+    dataCtx.save();
+    dataCtx.translate(points[currentMonth][0], dataCanvas.height - points[currentMonth][1]);
+    dataCtx.scale(2, 2);
+    dataCtx.rotate(a);
+    dataCtx.beginPath();
+    dataCtx.moveTo(-1, 0);
+    dataCtx.lineTo(1, 0);
+    dataCtx.lineTo(0, -1.5);
+    dataCtx.lineTo(-1, 0);
+    dataCtx.lineTo(1, 0);
+    dataCtx.stroke();
+    dataCtx.restore();
   }
 
-  function drawProjections(points, startPoint){
-    ctx.lineWidth = PROJECTION_LINE_WIDTH;
-    ctx.lineCap = 'round';
+  function drawProjections (points, startPoint) {
+    dataCtx.lineWidth = PROJECTION_LINE_WIDTH;
+    dataCtx.lineCap = 'round';
 
-    if(ctx.setLineDash){
-      ctx.setLineDash([1, 4]);
-      ctx.strokeStyle = '#222';
+    if(dataCtx.setLineDash){
+      dataCtx.setLineDash([1, 4]);
+      dataCtx.strokeStyle = '#222';
     }
     else {
-      ctx.strokeStyle = '#aaa';
+      dataCtx.strokeStyle = '#aaa';
     }
 
     drawLine(points, currentMonth, 12);
   }
 
-  function drawLine(points, startIndex, stopIndex) {
-    ctx.beginPath();
-    ctx.moveTo(points[startIndex][0], dataCanvas.height - points[startIndex][1]);
+  function drawLine (points, startIndex, stopIndex) {
+    dataCtx.beginPath();
+    dataCtx.moveTo(points[startIndex][0], dataCanvas.height - points[startIndex][1]);
     for(var i = startIndex; i <= stopIndex; ++i){
-      ctx.lineTo(points[i][0], dataCanvas.height - points[i][1]);
+      dataCtx.lineTo(points[i][0], dataCanvas.height - points[i][1]);
     }
-    ctx.stroke();
+    dataCtx.stroke();
   }
 
   var yMarkers = document.querySelectorAll('.y-axis > .y-marker');
@@ -346,7 +412,7 @@ function renderChart(data){
   plotEvents(points);
 }
 
-function setup(data){
+function setup (data) {
   renderChart(data);
   window.addEventListener('resize', function(e){
     renderChart(data);
