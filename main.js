@@ -325,6 +325,13 @@ function renderChart (data) {
     var i, p;
     var thisPair, nextPair;
 
+    if (currentMonth < 12) {
+      var dateMultiplier = currentDate.getDate() / daysInCurrentMonth;
+      var dist = [points[currentMonth+1][0] - points[currentMonth][0], points[currentMonth+1][1] - points[currentMonth][1]];
+      var lastPoint = [points[currentMonth][0] + dist[0]*dateMultiplier, dataCanvas.height - points[currentMonth][1] - dist[1]*dateMultiplier];
+      var a = -Math.atan((dist[1]) / (dist[0])) + Math.PI / 2;
+    }
+
     dataCtx.lineCap = 'round';
 
     if(dataCtx.setLineDash){
@@ -343,6 +350,12 @@ function renderChart (data) {
 
     pair = points[currentMonth];
 
+    if (currentMonth < 12) {
+      dataCtx.lineTo(lastPoint[0], lastPoint[1]);
+      pair = pair.slice();
+      pair[0] = lastPoint[0];
+    }
+
     dataCtx.lineTo(pair[0], dataCanvas.height);
     dataCtx.lineTo(startX, dataCanvas.height);
     dataCtx.lineTo(startX, dataCanvas.height - points[0][1]);
@@ -357,11 +370,6 @@ function renderChart (data) {
     drawLine(points, 0, currentMonth);
 
     if (currentMonth < 12) {
-      var dateMultiplier = currentDate.getDate() / daysInCurrentMonth;
-      var dist = [points[currentMonth+1][0] - points[currentMonth][0], points[currentMonth+1][1] - points[currentMonth][1]];
-      var lastPoint = [points[currentMonth][0] + dist[0]*dateMultiplier, dataCanvas.height - points[currentMonth][1] - dist[1]*dateMultiplier];
-      var a = -Math.atan((dist[1]) / (dist[0])) + Math.PI / 2;
-
       dataCtx.beginPath();
       dataCtx.moveTo(points[currentMonth][0], dataCanvas.height - points[currentMonth][1]);
       dataCtx.lineTo(lastPoint[0], lastPoint[1]);
