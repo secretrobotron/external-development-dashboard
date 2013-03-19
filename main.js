@@ -318,6 +318,9 @@ function renderChart (data) {
   }
 
   function drawActuals (points) {
+    var currentDate = new Date(Date.now());
+    var daysInCurrentMonth = new Date(currentDate.getYear(), currentDate.getMonth()+1, 0).getDate();
+
     var pair = points[0];
     var i, p;
     var thisPair, nextPair;
@@ -353,21 +356,31 @@ function renderChart (data) {
 
     drawLine(points, 0, currentMonth);
 
-    var a = -Math.atan((points[currentMonth][1] - points[currentMonth-1][1]) / (points[currentMonth][0] - points[currentMonth-1][0])) + Math.PI / 2;
+    if (currentMonth < 12) {
+      var dateMultiplier = currentDate.getDate() / daysInCurrentMonth;
+      var dist = [points[currentMonth+1][0] - points[currentMonth][0], points[currentMonth+1][1] - points[currentMonth][1]];
+      var lastPoint = [points[currentMonth][0] + dist[0]*dateMultiplier, dataCanvas.height - points[currentMonth][1] - dist[1]*dateMultiplier];
+      var a = -Math.atan((dist[1]) / (dist[0])) + Math.PI / 2;
+
+      dataCtx.beginPath();
+      dataCtx.moveTo(points[currentMonth][0], dataCanvas.height - points[currentMonth][1]);
+      dataCtx.lineTo(lastPoint[0], lastPoint[1]);
+      dataCtx.stroke();
     
-    dataCtx.lineCap = 'butt';
-    dataCtx.save();
-    dataCtx.translate(points[currentMonth][0], dataCanvas.height - points[currentMonth][1]);
-    dataCtx.scale(2, 2);
-    dataCtx.rotate(a);
-    dataCtx.beginPath();
-    dataCtx.moveTo(-1, 0);
-    dataCtx.lineTo(1, 0);
-    dataCtx.lineTo(0, -1.5);
-    dataCtx.lineTo(-1, 0);
-    dataCtx.lineTo(1, 0);
-    dataCtx.stroke();
-    dataCtx.restore();
+      dataCtx.lineCap = 'butt';
+      dataCtx.save();
+      dataCtx.translate(lastPoint[0], lastPoint[1]);
+      dataCtx.scale(2, 2);
+      dataCtx.rotate(a);
+      dataCtx.beginPath();
+      dataCtx.moveTo(-1, 0);
+      dataCtx.lineTo(1, 0);
+      dataCtx.lineTo(0, -1.5);
+      dataCtx.lineTo(-1, 0);
+      dataCtx.lineTo(1, 0);
+      dataCtx.stroke();
+      dataCtx.restore();
+    }
   }
 
   function drawProjections (points, startPoint) {
