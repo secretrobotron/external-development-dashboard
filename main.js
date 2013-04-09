@@ -72,10 +72,10 @@ function prepareData (data) {
 
   ggInitiated.forEach(function(item){
     if(item.date < januaryDate){
-      monthlyValues[0] += item.value;
+      monthlyValues[0] += Number(item.value);
     }
     else {
-      monthlyValues[new Date(item.date).getMonth()] += item.value;
+      monthlyValues[new Date(item.date).getMonth()] += Number(item.value);
     }
   });
 
