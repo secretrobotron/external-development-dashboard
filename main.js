@@ -21,7 +21,7 @@ var GRAPH_POINT_RADIUS_SMALL = 7;
 var ACTUAL_LINE_WIDTH = 7;
 var PROJECTION_LINE_WIDTH = 2;
 var FUNDER_SCROLL_TIME = 17000;
-var META_CANVAS_WAIT_TIMEOUT = 0;
+var META_CANVAS_WAIT_TIMEOUT = 500;
 
 // From http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript
 function formatCurrencyNumber (n, c, d, t) {
@@ -187,12 +187,16 @@ function renderChart (data) {
     }
   }
 
-  function waitAndDrawMetaCanvasProjection (x, y) {
+  function waitAndResetToEvent (currentEvent, nextEvent, nextEventDataPoint, nextEventPosition) {
+    var x = nextEventPosition[0], y = nextEventPosition[1];
     if (metaCanvasWaitTimeout) {
       clearTimeout(metaCanvasWaitTimeout);
     }
     metaCanvasWaitTimeout = setTimeout(function(){
       clearTimeout(metaCanvasWaitTimeout);
+      currentEvent.hidden = true;
+      clearMetaCanvasProjection();
+      nextEvent.hidden = false;
       metaCanvasWaitTimeout = null;
       clearMetaCanvasProjection();
       drawMetaCanvasProjectionBoxTo(x, y);
@@ -270,17 +274,7 @@ function renderChart (data) {
         };
 
         dataPoint.onmouseout = function(e) {
-          eventBoxContent.hidden = true;
-          clearMetaCanvasProjection();
-          if (nextEvent) {
-            nextEvent.hidden = false;
-            if (dataPoint === nextEventDataPoint) {
-              drawMetaCanvasProjectionBoxTo(x, y);
-            }
-            else {
-              waitAndDrawMetaCanvasProjection(nextEventPosition[0], nextEventPosition[1]);
-            }
-          }
+          waitAndResetToEvent(eventBoxContent, nextEvent, nextEventDataPoint, nextEventPosition);
         };
 
         eventBoxContent.hidden = true;
@@ -304,8 +298,7 @@ function renderChart (data) {
     }
 
     if (nextEvent) {
-      waitAndDrawMetaCanvasProjection(nextEventPosition[0], nextEventPosition[1]);
-      nextEvent.hidden = false; 
+      waitAndResetToEvent(nextEvent, nextEvent, nextEventDataPoint, nextEventPosition);
     }
 
   }
