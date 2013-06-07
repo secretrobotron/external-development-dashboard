@@ -10,8 +10,8 @@ var requestAnimFrame = (function(){
 })();
 
 var TARGET = 6500000;
-var REACH_TARGET = 9000000;
-var MAX_Y = 8000000;
+var REACH_TARGET = 8000000;
+var MAX_Y = 10000000;
 var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 var GAUNTLET_DATA_URL = 'https://script.google.com/macros/s/AKfycbw8CX3mKuOpfEYNZftmJaBiMDJFygNQ0sjfpHMRqr5lAX-bF_w/exec';
 var GRAPH_FILL_STYLE = 'rgba(34, 147, 209, 0.5)';
@@ -21,7 +21,7 @@ var GRAPH_POINT_RADIUS_SMALL = 7;
 var ACTUAL_LINE_WIDTH = 7;
 var PROJECTION_LINE_WIDTH = 2;
 var FUNDER_SCROLL_TIME = 17000;
-var META_CANVAS_WAIT_TIMEOUT = 500;
+var META_CANVAS_WAIT_TIMEOUT = 0;
 
 // From http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript
 function formatCurrencyNumber (n, c, d, t) {
@@ -148,13 +148,12 @@ function renderChart (data) {
     return points;
   }
 
-  function stampOutRadialDataPointBackground (x, y, radius, offset, ctx) {
+  function stampOutRadialDataPointBackground (x, y, radius, ctx) {
     ctx = ctx || dataCtx;
     var previousCompositeOperation = ctx.globalCompositeOperation;
-    offset = offset || 0;
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(x, y + offset, GRAPH_POINT_RADIUS, 0, Math.PI * 2, true);
+    ctx.arc(x, y, radius, 0, Math.PI * 2, true);
     ctx.fill();
     ctx.globalCompositeOperation = previousCompositeOperation;
   }
@@ -162,10 +161,6 @@ function renderChart (data) {
   function alignMonthLabel (index, x) {
     var label = xAxisLabels[index];
     label.style.left = x - label.offsetWidth / 2 + 'px';
-  }
-
-  function drawMetaCanvasProjectionBoxFromDataPoint (dataPoint) {
-    drawMetaCanvasProjectionBoxTo(dataPoint.offsetLeft + dataPoint.offsetWidth / 2, dataPoint.offsetTop + dataPoint.offsetHeight / 2);
   }
 
   function drawMetaCanvasProjectionBoxTo (x, y) {
@@ -184,16 +179,12 @@ function renderChart (data) {
     ctx.closePath();
     ctx.fill();
 
-    stampOutRadialDataPointBackground(x, y, GRAPH_POINT_RADIUS, 0, ctx);
+    stampOutRadialDataPointBackground(x, y, GRAPH_POINT_RADIUS, ctx);
 
     if (metaCanvasWaitTimeout) {
       clearTimeout(metaCanvasWaitTimeout);
       metaCanvasWaitTimeout = null;
     }
-  }
-
-  function waitAndDrawMetaCanvasProjectionFromDataPoint (dataPoint) {
-    waitAndDrawMetaCanvasProjection(dataPoint.offsetLeft + dataPoint.offsetWidth / 2, dataPoint.offsetTop + dataPoint.offsetHeight / 2);
   }
 
   function waitAndDrawMetaCanvasProjection (x, y) {
@@ -252,18 +243,20 @@ function renderChart (data) {
 
         if (monthIndex === currentMonth) {
           offset = GRAPH_POINT_RADIUS * 2.5;
-          radius = GRAPH_POINT_RADIUS_SMALL * 2.5;
+          radius = GRAPH_POINT_RADIUS_SMALL;
           dataPoint.classList.add('small');
         }
 
         var x = points[monthIndex][0];
-        var y = chartContentRect.height -
+        var y = dataCanvas.height -
           points[monthIndex][1] +
-          eventIndex * radius * 1.8 -
-          (monthsWithEvents[monthIndex].length - 1) / 2 * radius * 1.8 +
           offset;
 
-        stampOutRadialDataPointBackground(points[monthIndex][0], dataCanvas.height - points[monthIndex][1], radius, offset);
+        x = x.toFixed(2);
+        y = y.toFixed(2);
+
+        stampOutRadialDataPointBackground(x, y, radius);
+
         dataPoint.style.left = x + 'px';
         dataPoint.style.top = y + 'px';
 
@@ -273,7 +266,7 @@ function renderChart (data) {
           });
           eventBoxContent.hidden = false;
           clearMetaCanvasProjection();
-          drawMetaCanvasProjectionBoxFromDataPoint(dataPoint);
+          drawMetaCanvasProjectionBoxTo(x, y);
         };
 
         dataPoint.onmouseout = function(e) {
@@ -282,10 +275,10 @@ function renderChart (data) {
           if (nextEvent) {
             nextEvent.hidden = false;
             if (dataPoint === nextEventDataPoint) {
-              drawMetaCanvasProjectionBoxFromDataPoint(dataPoint);
+              drawMetaCanvasProjectionBoxTo(x, y);
             }
             else {
-              waitAndDrawMetaCanvasProjectionFromDataPoint(nextEventDataPoint);
+              waitAndDrawMetaCanvasProjection(nextEventPosition[0], nextEventPosition[1]);
             }
           }
         };
@@ -434,9 +427,12 @@ function renderChart (data) {
     });
   });
 
-  var targetContainer = document.querySelector('.target');
-  targetContainer.style.top = chartContentRect.height - chartContentRect.height * TARGET / MAX_Y - targetContainer.offsetHeight / 2 + 'px';
-  removeAllChildren(targetContainer.querySelector('.value')).appendChild(document.createTextNode('$' + formatCurrencyNumber(TARGET, 0, '.', ',')));
+  var targetContainers = document.querySelectorAll('.target');
+  Array.prototype.forEach.call(targetContainers, function (targetContainer) {
+    var targetValue = targetContainer.classList.contains('reach') ? REACH_TARGET : TARGET;
+    targetContainer.style.top = chartContentRect.height - chartContentRect.height * targetValue / MAX_Y - targetContainer.offsetHeight / 2 + 'px';
+    removeAllChildren(targetContainer.querySelector('.value')).appendChild(document.createTextNode('$' + formatCurrencyNumber(targetValue, 0, '.', ',')));
+  });
 
   var points = calculatePoints();
   drawProjections(points);

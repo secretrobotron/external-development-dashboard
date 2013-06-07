@@ -358,10 +358,19 @@ header h1 {
   width: 12.48em;
   left: -12.5em;
   line-height: 30px;
-  background: rgba(239, 73, 34, 0.8);
+  background: rgba(239, 73, 34, 0.4);
   border-radius: 3px;
   overflow: hidden;
 }
+
+.target.reach .label {
+  background: rgba(239, 73, 34, 0.8);
+}
+
+.target.reach .line {
+  background: rgba(239, 73, 34, 0.8);
+}
+
 
 .target .label .title {
   padding-left: .4em;
@@ -393,7 +402,7 @@ header h1 {
 .target .line {
   width: 101%;
   height: 5px;
-  background: rgba(239, 73, 34, 0.8);
+  background: rgba(239, 73, 34, 0.4);
   position: absolute;
   top: 50%;
   margin-top: -2.5px;
