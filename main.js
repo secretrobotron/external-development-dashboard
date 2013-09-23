@@ -23,6 +23,11 @@ var PROJECTION_LINE_WIDTH = 2;
 var FUNDER_SCROLL_TIME = 17000;
 var META_CANVAS_WAIT_TIMEOUT = 500;
 
+var SMALL_DOLLAR_EXPECTED = 1200000;
+var SMALL_DOLLAR_ACTUAL = 407000;
+var SMALL_DOLLAR_MONTHLY = SMALL_DOLLAR_ACTUAL / 12;
+var SMALL_DOLLAR_DIFFERENCE = SMALL_DOLLAR_EXPECTED - SMALL_DOLLAR_ACTUAL;
+
 // From http://stackoverflow.com/questions/149055/how-can-i-format-numbers-as-money-in-javascript
 function formatCurrencyNumber (n, c, d, t) {
   c = isNaN(c = Math.abs(c)) ? 2 : c, d = d === undefined ? "," : d, t = t === undefined ? "." : t, s = n < 0 ? "-" : "", i = parseInt(n = Math.abs(+n || 0).toFixed(c), 10) + "", j = (j = i.length) > 3 ? j % 3 : 0;
@@ -89,15 +94,17 @@ function prepareData (data) {
   });
 
   var previousValue = 0;
-
   MONTHS.forEach(function(month, index){
-    previousValue = monthlyValues[index] =  monthlyValues[index] + 
-                                            uninitiatedMontlySpread +
-                                            previousValue +
-                                            actualsData[index] +
-                                            projectionsData[index];
-  });
+    var smallDollarBump = (index === 9 || index === 10) ? SMALL_DOLLAR_DIFFERENCE * .25 :
+        (index === 11) ? SMALL_DOLLAR_DIFFERENCE * .5 : 0;
 
+    previousValue = monthlyValues[index] =
+      monthlyValues[index] +
+      uninitiatedMontlySpread +
+      previousValue +
+      SMALL_DOLLAR_MONTHLY +
+      smallDollarBump;
+  });
   return monthlyValues;
 }
 
