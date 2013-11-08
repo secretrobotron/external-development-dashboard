@@ -328,7 +328,7 @@ function renderChart (data) {
     dataCtx.lineCap = 'round';
 
     if(dataCtx.setLineDash){
-      dataCtx.setLineDash(0);
+      dataCtx.setLineDash([]);
     }
 
     dataCtx.fillStyle = GRAPH_FILL_STYLE;
@@ -367,7 +367,7 @@ function renderChart (data) {
       dataCtx.moveTo(points[currentMonth][0], dataCanvas.height - points[currentMonth][1]);
       dataCtx.lineTo(lastPoint[0], lastPoint[1]);
       dataCtx.stroke();
-    
+
       dataCtx.lineCap = 'butt';
       dataCtx.save();
       dataCtx.translate(lastPoint[0], lastPoint[1]);
@@ -440,10 +440,10 @@ function renderChart (data) {
   plotEvents(points);
 }
 
-function setup (data) {
+function setup (googleData, bsdData) {
   var resizeTimeout = null;
 
-  renderChart(data);
+  renderChart(googleData);
 
   window.addEventListener('resize', function (e) {
     if (resizeTimeout) {
@@ -452,11 +452,11 @@ function setup (data) {
     resizeTimeout = setTimeout(function(){
       clearTimeout(resizeTimeout);
       resizeTimeout = null;
-      renderChart(data);
+      renderChart(googleData);
     }, 250);
   }, false);
 
-  document.querySelector('.side-panel .num-users').innerHTML = formatCurrencyNumber(data.donations.contributorCount, 0, '.', ',');
+  document.querySelector('.side-panel .num-users').innerHTML = formatCurrencyNumber(bsdData.contributors, 0, '.', ',');
 
   var funderContainer = document.querySelector('.funder-container');
   var funderList = funderContainer.querySelector('ul');
@@ -488,7 +488,7 @@ function setup (data) {
       else {
         y = -height * (((time - startTime) % FUNDER_SCROLL_TIME) / FUNDER_SCROLL_TIME) + offset * height;
       }
-      
+
       var transformString = 'translate(0px,' + y + 'px)';
 
       funderList.style.transform = transformString;
@@ -504,27 +504,23 @@ function setup (data) {
 
     requestAnimFrame(iterate);
   }
-  
+
   funderListLoop(funderList);
   funderContainer.appendChild(funderListClone);
   funderListLoop(funderListClone, 1);
 }
 
 document.addEventListener('DOMContentLoaded', function(e){
-  if(window.location.search.indexOf('test') > -1){
-    var xhr = new XMLHttpRequest();
-    xhr.onload = function(){
-      setup(JSON.parse(xhr.response));
-    };
-    xhr.open('GET', 'test.json', false);
-    xhr.send();
-  }
-  else{
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'https://s3.amazonaws.com/mozilla-bsd-cache/yearly.json', true);
+  xhr.onload = function () {
+    var bsdData = JSON.parse(xhr.responseText);
     getJSONP(GAUNTLET_DATA_URL, function(json){
-      // console.log(JSON.stringify(json));
-      setup(json);
+      setup(json, bsdData);
     });
-  }
+  };
+  xhr.overrideMimeType('text/json');
+  xhr.send();
 }, false);
 
 })();
