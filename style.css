@@ -23,6 +23,39 @@ body {
   font-weight: normal;
 }
 
+.notice-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 80%;
+  height: 100%;
+  display: -webkit-flexbox;
+  display: -webkit-flex;
+  display: -moz-flexbox;
+  display: -moz-flex;
+  display: -ms-flexbox;
+  display: -ms-flex;
+  display: flexbox;
+  display: flex;
+  -webkit-flex-align: center;
+  -moz-flex-align: center;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  -moz-align-items: center;
+  -ms-align-items: center;
+}
+
+.notice {
+  position: relative;
+  width: 90%;
+  left: 5%;
+  font-size: 2em;
+  text-align: center;
+  background: rgba(34, 147, 209, 0.8);
+  border-radius: 50px;
+  color: #fff;
+}
+
 .main-panel {
   position: fixed;
   top: 0;
@@ -30,6 +63,7 @@ body {
   width: 80%;
   height: 100%;
   box-shadow: 2px 0 5px #000;
+  display: none;
 }
 
 header {

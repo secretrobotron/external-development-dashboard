@@ -440,24 +440,7 @@ function renderChart (data) {
   plotEvents(points);
 }
 
-function setup (googleData, bsdData) {
-  var resizeTimeout = null;
-
-  renderChart(googleData);
-
-  window.addEventListener('resize', function (e) {
-    if (resizeTimeout) {
-      clearTimeout(resizeTimeout);
-    }
-    resizeTimeout = setTimeout(function(){
-      clearTimeout(resizeTimeout);
-      resizeTimeout = null;
-      renderChart(googleData);
-    }, 250);
-  }, false);
-
-  document.querySelector('.side-panel .num-users').innerHTML = formatCurrencyNumber(bsdData.contributors, 0, '.', ',');
-
+function setupFunderList () {
   var funderContainer = document.querySelector('.funder-container');
   var funderList = funderContainer.querySelector('ul');
   var funderListClone = funderList.cloneNode(true);
@@ -508,6 +491,33 @@ function setup (googleData, bsdData) {
   funderListLoop(funderList);
   funderContainer.appendChild(funderListClone);
   funderListLoop(funderListClone, 1);
+}
+
+function setupUserCounter (bsdData) {
+  document.querySelector('.side-panel .num-users').innerHTML = formatCurrencyNumber(bsdData.contributors, 0, '.', ',');
+}
+
+function setupGraph (googleData) {
+  var resizeTimeout = null;
+
+  renderChart(googleData);
+
+  window.addEventListener('resize', function (e) {
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+    }
+    resizeTimeout = setTimeout(function(){
+      clearTimeout(resizeTimeout);
+      resizeTimeout = null;
+      renderChart(googleData);
+    }, 250);
+  }, false);
+}
+
+function setup (googleData, bsdData) {
+  // setupGraph(googleData);
+  setupUserCounter(bsdData);
+  setupFunderList();
 }
 
 document.addEventListener('DOMContentLoaded', function(e){
